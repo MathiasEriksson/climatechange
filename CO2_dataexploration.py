@@ -7,11 +7,11 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import urllib
+import statsmodels.api as sm
 
 #%% [markdown]
 # ## Get data to model the dependency between atmospheric C02
-# levels and temperatures on earth.
+# ## levels and temperatures on earth.
 # The data-source for the temperatures is the
 # "Estimated Global Land-Surface TAVG" based on the Complete Berkeley Dataset
 # provided by Berkley Earth: http://berkeleyearth.org/
@@ -52,7 +52,6 @@ temp_df.head()
 
 #%%
 # Now the newly created column can be set as the index and redundant info dropped
-# we will focus on monthly and annual anomalities so multi-year info will also be dropped
 temp_df = temp_df.set_index('Time-index')
 temp_df = temp_df.drop(['Year',
                         'Month',
@@ -63,5 +62,19 @@ temp_df = temp_df.drop(['Year',
                         'Twenty-year Anomaly','Tw.y. Unc.'],
                          axis=1)
 temp_df.head()
+
+#%%
+# Lets plot some timeseries to gain some understanding about the data 
+temp_df.plot(y=['Monthly Anomaly','Annual Anomaly'],figsize=(15,10))
+
+#%%
+temp_df['1998-3-1':].plot(y=['Monthly Anomaly','Annual Anomaly'],figsize=(15,10))
+#%%
+# Lets explore if the "Montly Anomality" series contains seasonality
+# which could be expected.
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+plot_acf(temp_df['Monthly Anomaly']['1960-3-1':],lags=25);
+plot_pacf(temp_df['Monthly Anomaly']['1960-3-1':],lags=25);
+
 
 #%%
