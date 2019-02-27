@@ -34,7 +34,7 @@ temp_header = [
     'Ten-year Anomaly',
     'T.y. Unc.',
     'Twenty-year Anomaly',
-    'T.y. Unc.'
+    'Tw.y. Unc.'
 ]
 temp_df = pd.read_csv('http://berkeleyearth.lbl.gov/auto/Global/Complete_TAVG_complete.txt',
             delim_whitespace=True,
@@ -43,3 +43,25 @@ temp_df = pd.read_csv('http://berkeleyearth.lbl.gov/auto/Global/Complete_TAVG_co
             names=temp_header
             )
 temp_df.head()
+
+#%%
+# Next the 'Year' and 'Month' colums are combined to a period
+# so that it can eventually be used as the index
+temp_df['Time-index'] = temp_df[['Year', 'Month']].apply(lambda row: pd.Period(year=row['Year'],month=row['Month'],freq='M') , axis=1)
+temp_df.head()
+
+#%%
+# Now the newly created column can be set as the index and redundant info dropped
+# we will focus on monthly and annual anomalities so multi-year info will also be dropped
+temp_df = temp_df.set_index('Time-index')
+temp_df = temp_df.drop(['Year',
+                        'Month',
+                        'Five-year Anomaly',
+                        'F.y. Unc.',
+                        'Ten-year Anomaly',
+                        'T.y. Unc.',
+                        'Twenty-year Anomaly','Tw.y. Unc.'],
+                         axis=1)
+temp_df.head()
+
+#%%
