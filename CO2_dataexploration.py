@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 
 #%% [markdown]
 # ## Get data to model the dependency between atmospheric C02
@@ -74,7 +75,6 @@ temp_df['1998-3-1':].plot(y=['Monthly Anomaly','Annual Anomaly'],figsize=(15,10)
 # Lets next explore possible seasonality and stationarity of the data set.
 # Lets explore the autocorrelation and partial autocorrelation functions
 # of the "Monthly Anomality" to gain more insight into the data.
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 plot_acf(temp_df['Monthly Anomaly']['1960-3-1':],lags=25);
 plot_pacf(temp_df['Monthly Anomaly']['1960-3-1':],lags=25);
 
@@ -86,7 +86,8 @@ plot_pacf(temp_df['Monthly Anomaly']['1960-3-1':],lags=25);
 # The autocorrelation function shows that there seems to be a trend in the data
 # so that the series is non stationary.
 #
-# Lets bring in the data C02 levels next.
+# Lets bring in the data for C02 levels next.
+# In this series -99 is used to denote missing data in the average series
 
 #%%
 co2_header = [
@@ -105,3 +106,40 @@ co2_df = pd.read_csv('ftp://ftp.cmdl.noaa.gov/ccg/co2/trends/co2_mm_mlo.txt',
             names=co2_header
             )
 co2_df.head()
+#%%
+# Next the 'Year' and 'Month' colums are combined to a period
+# so that it can eventually be used as the index
+co2_df['Time-index'] = co2_df[['Year', 'Month']].apply(lambda row: pd.Period(year=row['Year'],month=row['Month'],freq='M') , axis=1)
+co2_df = co2_df.drop(['Year', 'Month', 'decimal date'],axis = 1)
+co2_df = co2_df.set_index('Time-index')
+co2_df.head()
+
+#%%
+# Lets again plot the series to gain a better understanding of it
+# Lets plot some timeseries to gain some understanding about the data 
+co2_df[co2_df['average'] > -99].plot(y=['average','trend (season corr)'],figsize=(15,10))
+
+#%%
+co2_df.plot(y=['interpolated'],figsize=(15,10))
+
+#%%
+# Since the data in the interpolated and average are so close
+# there seems to be no benefit to using the raw average data since
+# it may contain missing data that has to be dealt with. The CO2 data
+# shows clear seasonality so to avoid heteroscedasticity 
+# we will use the seasonaly corrected trend data series.
+# The seasonality will be confirmed by an acf-plot:
+#%%
+plot_acf(co2_df['interpolated'],lags=25);
+plot_pacf(co2_df['interpolated'],lags=25);
+
+#%%
+plot_acf(co2_df['trend (season corr)'],lags=25);
+plot_pacf(co2_df['trend (season corr)'],lags=25);
+#%%
+# After examining plots, acf and pacf plots for both series
+# we see that both the co2 and the temperature data display 
+# an increasing trend (backed by acf plots). Additionally the co2
+# shows yearly seasonality in the average and interpolated data columns.
+# Based on this the model will be built using the "Montly Anomality" series
+# and the "trend (season corr)" series.
