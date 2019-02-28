@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from sklearn import linear_model
+from sklearn import metrics
 
 #%% [markdown]
 # ## Get data to model the dependency between atmospheric C02
@@ -72,11 +74,13 @@ temp_df.plot(y=['Monthly Anomaly','Annual Anomaly'],figsize=(15,10))
 temp_df['1998-3-1':].plot(y=['Monthly Anomaly','Annual Anomaly'],figsize=(15,10))
 #%%
 # There seems to be alot of variance in the data.
+# specially in the Montly Anomaly series, lets proceed with the more stable
+# dataset; Annual Anomaly
 # Lets next explore possible seasonality and stationarity of the data set.
 # Lets explore the autocorrelation and partial autocorrelation functions
 # of the "Monthly Anomality" to gain more insight into the data.
-plot_acf(temp_df['Monthly Anomaly']['1960-3-1':],lags=25);
-plot_pacf(temp_df['Monthly Anomaly']['1960-3-1':],lags=25);
+plot_acf(temp_df['Annual Anomaly']['1960-3-1':],lags=25);
+plot_pacf(temp_df['Annual Anomaly']['1960-3-1':],lags=25);
 
 
 #%%
@@ -141,7 +145,7 @@ plot_pacf(co2_df['trend (season corr)'],lags=25);
 # we see that both the co2 and the temperature data display 
 # an increasing trend (backed by acf plots). Additionally the co2
 # shows yearly seasonality in the average and interpolated data columns.
-# Based on this the model will be built using the "Montly Anomality" series
+# Based on this the model will be built using the "Annual Anomality" series
 # and the "trend (season corr)" series. Next the datasets are combined to one
 # dataframe.
 
@@ -151,12 +155,20 @@ model_df = model_df.drop(['average',
                          'interpolated',
                          '#days',
                          'M.A. Unc.',
-                        'Annual Anomaly',
+                        'Monthly Anomaly',
                         'A.A. Unc.'],
                           axis = 1)
+model_df = model_df.dropna(axis=0)
 model_df.head()
 
 #%%
-model_df.plot.scatter('trend (season corr)', 'Monthly Anomaly')
+model_df.plot.scatter('trend (season corr)', 'Annual Anomaly')
+
+#%%
+regr = linear_model.LinearRegression()
+model = regr.fit(model_df['trend (season corr)'].values.reshape(-1, 1), model_df['Annual Anomaly'].values.reshape(-1, 1))
+print('Coefficients: \n', regr.coef_)
+plt.scatter(model_df['trend (season corr)'], model_df['Annual Anomaly'])
+plt.scatter(model_df['trend (season corr)'], model.predict(model_df['trend (season corr)'].values.reshape(-1, 1)))
 
 #%%
