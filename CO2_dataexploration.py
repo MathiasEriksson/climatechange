@@ -142,4 +142,21 @@ plot_pacf(co2_df['trend (season corr)'],lags=25);
 # an increasing trend (backed by acf plots). Additionally the co2
 # shows yearly seasonality in the average and interpolated data columns.
 # Based on this the model will be built using the "Montly Anomality" series
-# and the "trend (season corr)" series.
+# and the "trend (season corr)" series. Next the datasets are combined to one
+# dataframe.
+
+#%%
+model_df = pd.merge(co2_df, temp_df, left_index=True, right_index=True)
+model_df = model_df.drop(['average',
+                         'interpolated',
+                         '#days',
+                         'M.A. Unc.',
+                        'Annual Anomaly',
+                        'A.A. Unc.'],
+                          axis = 1)
+model_df.head()
+
+#%%
+model_df.plot.scatter('trend (season corr)', 'Monthly Anomaly')
+
+#%%
