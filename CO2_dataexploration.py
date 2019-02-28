@@ -70,11 +70,38 @@ temp_df.plot(y=['Monthly Anomaly','Annual Anomaly'],figsize=(15,10))
 #%%
 temp_df['1998-3-1':].plot(y=['Monthly Anomaly','Annual Anomaly'],figsize=(15,10))
 #%%
-# Lets explore if the "Montly Anomality" series contains seasonality
-# which could be expected.
+# There seems to be alot of variance in the data.
+# Lets next explore possible seasonality and stationarity of the data set.
+# Lets explore the autocorrelation and partial autocorrelation functions
+# of the "Monthly Anomality" to gain more insight into the data.
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 plot_acf(temp_df['Monthly Anomaly']['1960-3-1':],lags=25);
 plot_pacf(temp_df['Monthly Anomaly']['1960-3-1':],lags=25);
 
 
 #%%
+# The correlation functions do not show seasonality which it should not
+# since each months value is an anomality in regards to the
+# Estimated Jan 1951-Dec 1980 monthly absolute temperature.
+# The autocorrelation function shows that there seems to be a trend in the data
+# so that the series is non stationary.
+#
+# Lets bring in the data C02 levels next.
+
+#%%
+co2_header = [
+    'Year',
+    'Month',
+    'decimal date',
+    'average',
+    'interpolated',
+    'trend (season corr)',
+    '#days'
+]
+co2_df = pd.read_csv('ftp://ftp.cmdl.noaa.gov/ccg/co2/trends/co2_mm_mlo.txt',
+            delim_whitespace=True,
+            comment='#',
+            header=None,
+            names=co2_header
+            )
+co2_df.head()
