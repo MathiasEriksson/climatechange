@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 import statsmodels.api as sm
+from statsmodels.sandbox.regression.predstd import wls_prediction_std
 
 #%% [markdown]
 # ## Get data to model the dependency between atmospheric C02 levels and temperatures on earth.
@@ -190,12 +191,50 @@ print(results.summary())
 
 #%%
 plt.figure(figsize=(8,6))
+prstd, iv_l, iv_u = wls_prediction_std(results)
 # Plot predicted values
 plt.plot(model_df['trend (season corr)'], results.predict(), label='predicted')
 # Plot observed values
 plt.plot(model_df['trend (season corr)'], model_df['Five-year Anomaly'], label='observed')
+#plot confidence intervals
+plt.plot(model_df['trend (season corr)'], iv_l,'r--', label='95%-Confidence interval')
+plt.plot(model_df['trend (season corr)'], iv_u,'r--')
+
 plt.legend()
 plt.title('Temperature change on earth against C02 levels')
 plt.xlabel('CO2 fraction in dry air, micromol/mol')
 plt.ylabel('Five-year average temperature change')
 plt.show()
+
+#%% [markdown]
+# ## Predictions about the future
+# Lets assume that the C02 levels continue to rise at the same pace
+# for the next 20 years what would the temperature on earth be then according to the model.
+# lets first examine what the rise in C02 levels have been on average during the last 5 years.
+
+#%%
+co2_diff_df = co2_df['2014-1-1':]['trend (season corr)']
+co2_diff_df = co2_diff_df.diff().dropna(axis=0)
+print('Average increase of C02 per month during the last 5 years:')
+print(co2_diff_df.mean())
+co2_avg_change = co2_diff_df.mean()
+
+#%% [markdown]
+# Lets next extrapolate the increase in C02 for the next 20 years.
+# make new df
+future_df = co2_df.iloc[-20*12:].copy()
+# make new index for 20 years in to the future
+future_df['new index'] = co2_df.iloc[-20*12:].index.shift(20*12)
+# use the last C02 measurement for starting value for extrapolation
+future_df['trend (season corr)'] = co2_df['trend (season corr)'].iloc[-1]
+future_df = future_df.assign(trend=np.arange(start= 1,stop=20*12+1))
+#Extrapolate
+future_df['trend'] = future_df['trend'] * co2_avg_change
+future_df['trend (season corr)'] = future_df['trend (season corr)'] +future_df['trend']
+
+# clean up
+future_df.index = future_df['new index']
+future_df = future_df.drop(['average','interpolated','#days','new index', 'trend'],axis = 1)
+future_df.index.rename('Time', inplace= True)
+future_df.tail()
+#%%
