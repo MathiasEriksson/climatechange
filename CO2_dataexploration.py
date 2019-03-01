@@ -230,11 +230,30 @@ future_df['trend (season corr)'] = co2_df['trend (season corr)'].iloc[-1]
 future_df = future_df.assign(trend=np.arange(start= 1,stop=20*12+1))
 #Extrapolate
 future_df['trend'] = future_df['trend'] * co2_avg_change
-future_df['trend (season corr)'] = future_df['trend (season corr)'] +future_df['trend']
+future_df['extrapolated trend'] = future_df['trend (season corr)'] +future_df['trend']
 
 # clean up
 future_df.index = future_df['new index']
-future_df = future_df.drop(['average','interpolated','#days','new index', 'trend'],axis = 1)
+future_df = future_df.drop(['average','interpolated','#days','new index', 'trend (season corr)', 'trend'],axis = 1)
 future_df.index.rename('Time', inplace= True)
 future_df.tail()
+#%% [markdown]
+# Plot of the extrapolated CO2 values
+
 #%%
+co2_df.append(future_df).plot(y=['trend (season corr)','extrapolated trend'],figsize=(15,10))
+
+#%% [markdown]
+# Next the model is used to estimate how the temperature would change assuming
+# CO2 levels would continue to rise as extrapolated.
+
+#%%
+prediction = results.get_prediction(exog=sm.add_constant(future_df))
+prediction_df = prediction.summary_frame().rename(
+                                                  {'mean': 'prediction', 'mean_ci_lower': 'lower 95% CI', 'mean_ci_upper': 'upper 95% CI'},
+                                                  axis='columns'
+                                                 )
+temp_df['1900-1-1':].append(prediction_df).plot(y=['prediction','lower 95% CI','upper 95% CI','Five-year Anomaly'],figsize=(15,10))
+#%% [markdown]
+# The model shows that it is extremely likely that the temperature will rise 1 degree more
+# if the CO2 levels will continue to rise as they do now for the next 20 years.
