@@ -80,25 +80,31 @@ temp_df['1998-3-1':].plot(y=['Monthly Anomaly','Annual Anomaly','Five-year Anoma
 # Lets explore the autocorrelation and partial autocorrelation functions
 # of the "Annual Anomality" and "Five-year Anomaly" to gain more insight into the data.
 
+#%% [markdown] 
+# Annual Anomaly
 #%%
 plot_acf(temp_df['Annual Anomaly']['1960-3-1':].dropna(axis=0),lags=25);
 plot_pacf(temp_df['Annual Anomaly']['1960-3-1':].dropna(axis=0),lags=25);
-plot_acf(temp_df['Five-year Anomaly']['1960-3-1':].dropna(axis=0),lags=25);
-plot_pacf(temp_df['Five-year Anomaly']['1960-3-1':].dropna(axis=0),lags=25);
+#%% [markdown] 
+# Five-year Anomaly
+plot_acf(temp_df['Five-year Anomaly']['1960-3-1':].dropna(axis=0),lags=70);
+plot_pacf(temp_df['Five-year Anomaly']['1960-3-1':].dropna(axis=0),lags=70);
 
 
 #%% [markdown]
 # The correlation function show seasonality of one year for the annual series which it should
 # at least according to common sense
-# since each month value is an anomality in regards to a moving average
-# centered around that month and referenced to averages
+# since each value is an "anomality" or difference in regards to averages
 # estimated from Jan 1951-Dec 1980 monthly absolute temperatures.
-# The five year series does not show seasonality which is good since
+# The values are a moving average centered around that month and referenced to the 
+# reference time frame.
+# The five year series does not show significant seasonality which is good since
 # seasonality introduces heteroscedasity which is to be avoided.
 # The autocorrelation functions for both series shows that there seems to be a trend in the data
 # so the series are non-stationary (in other words have a trend).
 #
 # Lets bring in the data for C02 levels next.
+# The data is reported as ppm C02 in dried air.
 # In this series -99 is used to denote missing data in the average series.
 
 #%%
@@ -176,6 +182,8 @@ model_df.head()
 #%%
 model_df.plot.scatter('trend (season corr)', 'Five-year Anomaly')
 
+#%% [markdown]
+# The relationship seems to be linear so linear regression will be used to find a model.
 #%%
 regr =  sm.OLS(endog=model_df['Five-year Anomaly'], exog=model_df[['const', 'trend (season corr)']], missing='drop')
 results = regr.fit()
@@ -186,7 +194,9 @@ print(results.summary())
 # explained by the parts per million C02 amount of dried air.
 # In other words there is a strong correlation between atmospheric C02 levels and earth temperature.
 # This is further confirmed by the F-test for linear regression which claims that there is
-# a chance of less tham 0.005 that these result were obtained by chance.
+# a chance of less than 0.005 that these result were obtained by chance.
+# the estimated coefficient is 0.0150, which means that the temperature will increase by
+# 0.015 for each additional ppm of C02 in the atmosphere.
 # Next the lets inspect the results with a plot.
 
 #%%
@@ -209,8 +219,8 @@ plt.show()
 #%% [markdown]
 # ## Predictions about the future
 # Lets assume that the C02 levels continue to rise at the same pace
-# for the next 20 years what would the temperature on earth be then according to the model.
-# lets first examine what the rise in C02 levels have been on average during the last 5 years.
+# for the next 20 years. What would the temperature on earth be then according to the model.
+# Lets first examine what the rise in C02 levels have been on average during the last 5 years.
 
 #%%
 co2_diff_df = co2_df['2014-1-1':]['trend (season corr)']
